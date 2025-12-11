@@ -8,7 +8,7 @@ import pygame
 
 from constants import SCREEN_WIDTH, SCREEN_HEIGHT, SceneType, init_fonts
 from graphics import create_background_surface
-from player import create_players, resolve_round, get_round_choices
+from player import create_players, resolve_round, get_round_choices, get_choosers, get_non_choosers
 from scenes import MenuScene, GameScene, ResolutionScene, VictoryScene
 
 
@@ -72,11 +72,17 @@ class Game:
         
         elif new_scene == SceneType.RESOLUTION:
             # Get the winning/losing choices before resolving (for animation)
-            winning_choice, losing_choice, is_majority = get_round_choices(self.players)
+            winning_choice, losing_choice, is_majority, is_no_choice = get_round_choices(self.players)
             
             # Set up battle animation BEFORE resolving (need player states)
-            self.scenes[SceneType.RESOLUTION].set_battle_choices(winning_choice, losing_choice, is_majority)
-            self.scenes[SceneType.RESOLUTION].set_battle_players(self.players)
+            if is_no_choice:
+                # Special case: players who didn't choose get eliminated
+                choosers = get_choosers(self.players)
+                non_choosers = get_non_choosers(self.players)
+                self.scenes[SceneType.RESOLUTION].set_no_choice_battle(choosers, non_choosers)
+            else:
+                self.scenes[SceneType.RESOLUTION].set_battle_choices(winning_choice, losing_choice, is_majority)
+                self.scenes[SceneType.RESOLUTION].set_battle_players(self.players)
             
             # Resolve the round and set eliminated players
             eliminated = resolve_round(self.players)

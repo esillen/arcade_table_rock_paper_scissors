@@ -23,12 +23,14 @@ class ResolutionScene(Scene):
         self.winners: List[Player] = []
         self.losers: List[Player] = []
         self.neutrals: List[Player] = []  # Players who picked the third choice
+        self.non_choosers: List[Player] = []  # Players who didn't choose
         self.battle_pairs: List[Tuple[Player, Player]] = []  # (winner, loser) pairs
         self.animation_start = 0
         self.animation_duration = 2.5  # seconds
         self.winning_choice: Optional[Choice] = None
         self.losing_choice: Optional[Choice] = None
         self.is_majority_rule: bool = False
+        self.is_no_choice: bool = False  # True when eliminating non-choosers
         self.particles: List[dict] = []
         self.impact_triggered: List[int] = []  # Track which pairs have triggered impact
     
@@ -44,13 +46,35 @@ class ResolutionScene(Scene):
         self.winning_choice = winning
         self.losing_choice = losing
         self.is_majority_rule = is_majority
+        self.is_no_choice = False
+        self.non_choosers = []
+    
+    def set_no_choice_battle(self, choosers: List[Player], non_choosers: List[Player]):
+        """Set up battle where choosers defeat non-choosers."""
+        self.is_no_choice = True
+        self.is_majority_rule = False
+        self.winning_choice = None
+        self.losing_choice = None
+        self.winners = choosers
+        self.losers = []
+        self.non_choosers = non_choosers
+        self.neutrals = []
+        self.battle_pairs = []
+        
+        # Each chooser attacks a non-chooser
+        if choosers and non_choosers:
+            for i, chooser in enumerate(choosers):
+                non_chooser = non_choosers[i % len(non_choosers)]
+                self.battle_pairs.append((chooser, non_chooser))
     
     def set_battle_players(self, players: List[Player]):
         """Determine winners, losers, and neutrals, and pair them up for animation."""
         self.winners = []
         self.losers = []
         self.neutrals = []
+        self.non_choosers = []
         self.battle_pairs = []
+        self.is_no_choice = False
         
         if not self.winning_choice or not self.losing_choice:
             return
@@ -227,64 +251,85 @@ class ResolutionScene(Scene):
         self.draw_particles()
         
         # Show battle result text in center after impact
-        if progress > 0.5 and self.winning_choice and self.losing_choice:
+        if progress > 0.5:
             text_alpha = min(255, int((progress - 0.5) * 2 * 255))
             
-            verb = self.get_battle_verb()
-            winner_name = self.winning_choice.name
-            loser_name = self.losing_choice.name
-            
-            # Different text for majority rule
-            if self.is_majority_rule:
-                # "MAJORITY RULES!" header
-                majority_text = constants.FONT_LARGE.render("MAJORITY RULES!", True, COLORS['purple'])
-                majority_shadow = constants.FONT_LARGE.render("MAJORITY RULES!", True, (0, 0, 0))
+            if self.is_no_choice:
+                # "TOO SLOW!" text for non-choosers
+                header_text = constants.FONT_LARGE.render("TOO SLOW!", True, COLORS['red'])
+                header_shadow = constants.FONT_LARGE.render("TOO SLOW!", True, (0, 0, 0))
                 
-                majority_rect = majority_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 60))
-                shadow_rect = majority_shadow.get_rect(center=(SCREEN_WIDTH // 2 + 4, SCREEN_HEIGHT // 2 - 56))
+                header_rect = header_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 40))
+                shadow_rect = header_shadow.get_rect(center=(SCREEN_WIDTH // 2 + 4, SCREEN_HEIGHT // 2 - 36))
                 
-                majority_shadow.set_alpha(text_alpha)
-                majority_text.set_alpha(text_alpha)
+                header_shadow.set_alpha(text_alpha)
+                header_text.set_alpha(text_alpha)
                 
-                self.screen.blit(majority_shadow, shadow_rect)
-                self.screen.blit(majority_text, majority_rect)
+                self.screen.blit(header_shadow, shadow_rect)
+                self.screen.blit(header_text, header_rect)
                 
-                # Count text
-                winner_count = len(self.winners)
-                neutral_count = len(self.neutrals)
-                loser_count = len(self.losers)
+                # Explanation
+                explain_text = constants.FONT_MEDIUM.render("Didn't choose = Eliminated!", True, COLORS['orange'])
+                explain_rect = explain_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 20))
+                explain_text.set_alpha(text_alpha)
+                self.screen.blit(explain_text, explain_rect)
                 
-                count_str = f"{winner_name}: {winner_count}  vs  Others: {neutral_count + loser_count}"
-                count_text = constants.FONT_SMALL.render(count_str, True, COLORS['silver'])
-                count_rect = count_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 10))
-                count_text.set_alpha(text_alpha)
-                self.screen.blit(count_text, count_rect)
+            elif self.winning_choice and self.losing_choice:
+                verb = self.get_battle_verb()
+                winner_name = self.winning_choice.name
+                loser_name = self.losing_choice.name
                 
-                # Result text (smaller, below)
-                result_text = constants.FONT_MEDIUM.render(f"{winner_name} {verb} {loser_name}!", True, COLORS['gold'])
-                result_shadow = constants.FONT_MEDIUM.render(f"{winner_name} {verb} {loser_name}!", True, (0, 0, 0))
-                
-                result_rect = result_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 35))
-                result_shadow_rect = result_shadow.get_rect(center=(SCREEN_WIDTH // 2 + 3, SCREEN_HEIGHT // 2 + 38))
-                
-                result_shadow.set_alpha(text_alpha)
-                result_text.set_alpha(text_alpha)
-                
-                self.screen.blit(result_shadow, result_shadow_rect)
-                self.screen.blit(result_text, result_rect)
-            else:
-                # Standard text
-                result_text = constants.FONT_MEDIUM.render(f"{winner_name} {verb} {loser_name}!", True, COLORS['gold'])
-                shadow_text = constants.FONT_MEDIUM.render(f"{winner_name} {verb} {loser_name}!", True, (0, 0, 0))
-                
-                result_rect = result_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2))
-                shadow_rect = shadow_text.get_rect(center=(SCREEN_WIDTH // 2 + 3, SCREEN_HEIGHT // 2 + 3))
-                
-                shadow_text.set_alpha(text_alpha)
-                result_text.set_alpha(text_alpha)
-                
-                self.screen.blit(shadow_text, shadow_rect)
-                self.screen.blit(result_text, result_rect)
+                # Different text for majority rule
+                if self.is_majority_rule:
+                    # "MAJORITY RULES!" header
+                    majority_text = constants.FONT_LARGE.render("MAJORITY RULES!", True, COLORS['purple'])
+                    majority_shadow = constants.FONT_LARGE.render("MAJORITY RULES!", True, (0, 0, 0))
+                    
+                    majority_rect = majority_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 60))
+                    shadow_rect = majority_shadow.get_rect(center=(SCREEN_WIDTH // 2 + 4, SCREEN_HEIGHT // 2 - 56))
+                    
+                    majority_shadow.set_alpha(text_alpha)
+                    majority_text.set_alpha(text_alpha)
+                    
+                    self.screen.blit(majority_shadow, shadow_rect)
+                    self.screen.blit(majority_text, majority_rect)
+                    
+                    # Count text
+                    winner_count = len(self.winners)
+                    neutral_count = len(self.neutrals)
+                    loser_count = len(self.losers)
+                    
+                    count_str = f"{winner_name}: {winner_count}  vs  Others: {neutral_count + loser_count}"
+                    count_text = constants.FONT_SMALL.render(count_str, True, COLORS['silver'])
+                    count_rect = count_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 10))
+                    count_text.set_alpha(text_alpha)
+                    self.screen.blit(count_text, count_rect)
+                    
+                    # Result text (smaller, below)
+                    result_text = constants.FONT_MEDIUM.render(f"{winner_name} {verb} {loser_name}!", True, COLORS['gold'])
+                    result_shadow = constants.FONT_MEDIUM.render(f"{winner_name} {verb} {loser_name}!", True, (0, 0, 0))
+                    
+                    result_rect = result_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 35))
+                    result_shadow_rect = result_shadow.get_rect(center=(SCREEN_WIDTH // 2 + 3, SCREEN_HEIGHT // 2 + 38))
+                    
+                    result_shadow.set_alpha(text_alpha)
+                    result_text.set_alpha(text_alpha)
+                    
+                    self.screen.blit(result_shadow, result_shadow_rect)
+                    self.screen.blit(result_text, result_rect)
+                else:
+                    # Standard text
+                    result_text = constants.FONT_MEDIUM.render(f"{winner_name} {verb} {loser_name}!", True, COLORS['gold'])
+                    shadow_text = constants.FONT_MEDIUM.render(f"{winner_name} {verb} {loser_name}!", True, (0, 0, 0))
+                    
+                    result_rect = result_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2))
+                    shadow_rect = shadow_text.get_rect(center=(SCREEN_WIDTH // 2 + 3, SCREEN_HEIGHT // 2 + 3))
+                    
+                    shadow_text.set_alpha(text_alpha)
+                    result_text.set_alpha(text_alpha)
+                    
+                    self.screen.blit(shadow_text, shadow_rect)
+                    self.screen.blit(result_text, result_rect)
     
     def draw(self, players: List[Player]):
         """Draw the resolution scene."""
@@ -293,11 +338,16 @@ class ResolutionScene(Scene):
         progress = self.get_animation_progress()
         
         # Draw all player slots with choices revealed
-        # But hide the choice icon for losers after impact (it's been "defeated")
+        # But hide the choice icon for losers/non-choosers after impact
         for player in players:
             if player.joined:
-                # During animation, don't show loser's choice after impact
                 show_choice = True
+                
+                # Non-choosers never had a choice to show
+                if player in self.non_choosers:
+                    show_choice = False
+                
+                # During animation, don't show loser's choice after impact
                 if progress > 0.5 and player in self.losers:
                     show_choice = False  # Choice has been defeated
                 
@@ -308,11 +358,11 @@ class ResolutionScene(Scene):
                 
                 draw_player_slot(self.screen, player, show_choice=show_choice, show_controls=False)
         
-        # Draw battle animation if there was a winner/loser
+        # Draw battle animation if there was a winner/loser (or non-chooser elimination)
         if self.battle_pairs:
             self.draw_battle_animation(players)
-        elif not self.winning_choice:
-            # Draw "DRAW" text for ties
+        elif not self.winning_choice and not self.is_no_choice:
+            # Draw "DRAW" text for ties (but not for no-choice situations)
             if progress > 0.3:
                 # Shadow
                 shadow = constants.FONT_LARGE.render("DRAW!", True, (0, 0, 0))
@@ -334,7 +384,7 @@ class ResolutionScene(Scene):
         
         # Show elimination status after animation
         if self.is_animation_complete():
-            y_offset = SCREEN_HEIGHT // 2 + 80 if self.is_majority_rule else SCREEN_HEIGHT // 2 + 60
+            y_offset = SCREEN_HEIGHT // 2 + 80 if (self.is_majority_rule or self.is_no_choice) else SCREEN_HEIGHT // 2 + 60
             
             if self.eliminated_this_round:
                 elim_names = ", ".join([f"P{p.id}" for p in self.eliminated_this_round])

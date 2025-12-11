@@ -140,15 +140,27 @@ def resolve_round(players: List[Player]) -> List[Player]:
     Returns list of players who are eliminated this round.
     
     Rules:
+    - Players who didn't choose are eliminated first (if anyone else chose)
     - If all players chose the same: no elimination
     - If all three choices are present:
       - If there's a majority, that majority defeats what it beats
       - If no majority (all equal), it's a draw
     - If only two choices present: standard RPS rules apply, losers eliminated
     """
-    active_players = [p for p in players if p.joined and p.alive and p.choice != Choice.NONE]
+    all_alive = [p for p in players if p.joined and p.alive]
+    players_who_chose = [p for p in all_alive if p.choice != Choice.NONE]
+    players_who_didnt = [p for p in all_alive if p.choice == Choice.NONE]
     
-    if len(active_players) < 2:
+    # First: eliminate anyone who didn't choose (if at least one person did choose)
+    if players_who_didnt and players_who_chose:
+        eliminated = []
+        for player in players_who_didnt:
+            player.eliminate()
+            eliminated.append(player)
+        return eliminated  # Only eliminate non-choosers this round
+    
+    # If no one chose or only one person chose, no elimination
+    if len(players_who_chose) < 2:
         return []
     
     # Count choices
@@ -189,7 +201,7 @@ def resolve_round(players: List[Player]) -> List[Player]:
     # Eliminate players with losing choice
     eliminated = []
     if losing_choice:
-        for player in active_players:
+        for player in players_who_chose:
             if player.choice == losing_choice:
                 player.eliminate()
                 eliminated.append(player)
@@ -215,26 +227,45 @@ def get_winner(players: List[Player]) -> Player:
     return None
 
 
-def get_round_choices(players: List[Player]) -> Tuple[Optional[Choice], Optional[Choice], bool]:
+def get_non_choosers(players: List[Player]) -> List[Player]:
+    """Get list of alive players who didn't make a choice."""
+    return [p for p in players if p.joined and p.alive and p.choice == Choice.NONE]
+
+
+def get_choosers(players: List[Player]) -> List[Player]:
+    """Get list of alive players who made a choice."""
+    return [p for p in players if p.joined and p.alive and p.choice != Choice.NONE]
+
+
+def get_round_choices(players: List[Player]) -> Tuple[Optional[Choice], Optional[Choice], bool, bool]:
     """
     Get the winning and losing choices from the round.
-    Returns (winning_choice, losing_choice, is_majority_rule) or (None, None, False) if draw.
+    Returns (winning_choice, losing_choice, is_majority_rule, is_no_choice) 
+    or (None, None, False, False) if draw.
     
     is_majority_rule is True when all three choices were present but majority won.
+    is_no_choice is True when some players didn't choose (they get eliminated).
     """
+    # Check for non-choosers first
+    non_choosers = get_non_choosers(players)
+    choosers = get_choosers(players)
+    
+    if non_choosers and choosers:
+        # Some players didn't choose - they get eliminated
+        # Return special case: no winning/losing choice, but is_no_choice=True
+        return (None, None, False, True)
+    
     # Count choices for active players (before elimination)
     counts = {Choice.ROCK: 0, Choice.PAPER: 0, Choice.SCISSORS: 0}
     for p in players:
         if p.joined and p.choice != Choice.NONE:
-            # Count if player is alive OR was just eliminated this round
-            # (we call this before resolve_round, so all are still "alive")
             counts[p.choice] += 1
     
     present_choices = [c for c in counts if counts[c] > 0]
     
     # All same = draw
-    if len(present_choices) == 1:
-        return (None, None, False)
+    if len(present_choices) <= 1:
+        return (None, None, False, False)
     
     if len(present_choices) == 3:
         # All three choices present - check for majority
@@ -245,21 +276,21 @@ def get_round_choices(players: List[Player]) -> Tuple[Optional[Choice], Optional
             # There's a clear majority - they defeat what they beat
             majority = majority_choices[0]
             losing = get_what_beats(majority)
-            return (majority, losing, True)  # True = majority rule
+            return (majority, losing, True, False)  # True = majority rule
         else:
             # No clear majority = draw
-            return (None, None, False)
+            return (None, None, False, False)
     
     # Two choices - standard RPS rules
     c1, c2 = present_choices[0], present_choices[1]
     
     # Determine winning and losing choice
     if (c1 == Choice.ROCK and c2 == Choice.SCISSORS) or (c1 == Choice.SCISSORS and c2 == Choice.ROCK):
-        return (Choice.ROCK, Choice.SCISSORS, False)
+        return (Choice.ROCK, Choice.SCISSORS, False, False)
     elif (c1 == Choice.SCISSORS and c2 == Choice.PAPER) or (c1 == Choice.PAPER and c2 == Choice.SCISSORS):
-        return (Choice.SCISSORS, Choice.PAPER, False)
+        return (Choice.SCISSORS, Choice.PAPER, False, False)
     elif (c1 == Choice.PAPER and c2 == Choice.ROCK) or (c1 == Choice.ROCK and c2 == Choice.PAPER):
-        return (Choice.PAPER, Choice.ROCK, False)
+        return (Choice.PAPER, Choice.ROCK, False, False)
     
-    return (None, None, False)
+    return (None, None, False, False)
 
