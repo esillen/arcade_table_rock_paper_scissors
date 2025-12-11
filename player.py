@@ -4,7 +4,7 @@ Player class and related logic for Rock Paper Scissors Arena.
 
 import pygame
 from dataclasses import dataclass, field
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 
 from constants import Choice, PLAYER_COLORS
 
@@ -176,4 +176,42 @@ def get_winner(players: List[Player]) -> Player:
         if player.joined and player.alive:
             return player
     return None
+
+
+def get_round_choices(players: List[Player]) -> Tuple[Choice, Choice]:
+    """
+    Get the winning and losing choices from the round.
+    Returns (winning_choice, losing_choice) or (None, None) if draw.
+    """
+    active_players = [p for p in players if p.joined and p.alive or 
+                      any(p.id == elim.id for elim in players if hasattr(elim, '_just_eliminated'))]
+    
+    # Get all choices made this round (including just-eliminated players)
+    choices = set()
+    for p in players:
+        if p.joined and p.choice != Choice.NONE:
+            choices.add(p.choice)
+    
+    # All same or all three present = draw
+    if len(choices) != 2:
+        return (None, None)
+    
+    choices_list = list(choices)
+    c1, c2 = choices_list[0], choices_list[1]
+    
+    # Determine winning and losing choice
+    if (c1 == Choice.ROCK and c2 == Choice.SCISSORS):
+        return (Choice.ROCK, Choice.SCISSORS)
+    elif (c1 == Choice.SCISSORS and c2 == Choice.ROCK):
+        return (Choice.ROCK, Choice.SCISSORS)
+    elif (c1 == Choice.SCISSORS and c2 == Choice.PAPER):
+        return (Choice.SCISSORS, Choice.PAPER)
+    elif (c1 == Choice.PAPER and c2 == Choice.SCISSORS):
+        return (Choice.SCISSORS, Choice.PAPER)
+    elif (c1 == Choice.PAPER and c2 == Choice.ROCK):
+        return (Choice.PAPER, Choice.ROCK)
+    elif (c1 == Choice.ROCK and c2 == Choice.PAPER):
+        return (Choice.PAPER, Choice.ROCK)
+    
+    return (None, None)
 
