@@ -114,6 +114,26 @@ def create_players() -> List[Player]:
     return players
 
 
+def get_choice_counts(players: List[Player]) -> dict:
+    """Count how many players chose each option."""
+    counts = {Choice.ROCK: 0, Choice.PAPER: 0, Choice.SCISSORS: 0}
+    for p in players:
+        if p.joined and p.alive and p.choice != Choice.NONE:
+            counts[p.choice] += 1
+    return counts
+
+
+def get_what_beats(choice: Choice) -> Choice:
+    """Get what the given choice beats."""
+    if choice == Choice.ROCK:
+        return Choice.SCISSORS
+    elif choice == Choice.SCISSORS:
+        return Choice.PAPER
+    elif choice == Choice.PAPER:
+        return Choice.ROCK
+    return None
+
+
 def resolve_round(players: List[Player]) -> List[Player]:
     """
     Resolve a round of rock paper scissors.
@@ -121,7 +141,9 @@ def resolve_round(players: List[Player]) -> List[Player]:
     
     Rules:
     - If all players chose the same: no elimination
-    - If all three choices are present: no elimination (cancels out)
+    - If all three choices are present:
+      - If there's a majority, that majority defeats what it beats
+      - If no majority (all equal), it's a draw
     - If only two choices present: standard RPS rules apply, losers eliminated
     """
     active_players = [p for p in players if p.joined and p.alive and p.choice != Choice.NONE]
@@ -130,32 +152,47 @@ def resolve_round(players: List[Player]) -> List[Player]:
         return []
     
     # Count choices
-    choices = set(p.choice for p in active_players)
+    counts = get_choice_counts(players)
+    present_choices = [c for c in counts if counts[c] > 0]
     
-    # All same or all three present = draw
-    if len(choices) == 1 or len(choices) == 3:
+    # All same = draw
+    if len(present_choices) == 1:
         return []
     
-    # Two choices - determine winner
-    choices_list = list(choices)
-    c1, c2 = choices_list[0], choices_list[1]
-    
-    # Determine losing choice
-    # Rock beats Scissors, Scissors beats Paper, Paper beats Rock
     losing_choice = None
-    if (c1 == Choice.ROCK and c2 == Choice.SCISSORS) or (c1 == Choice.SCISSORS and c2 == Choice.ROCK):
-        losing_choice = Choice.SCISSORS
-    elif (c1 == Choice.SCISSORS and c2 == Choice.PAPER) or (c1 == Choice.PAPER and c2 == Choice.SCISSORS):
-        losing_choice = Choice.PAPER
-    elif (c1 == Choice.PAPER and c2 == Choice.ROCK) or (c1 == Choice.ROCK and c2 == Choice.PAPER):
-        losing_choice = Choice.ROCK
+    
+    if len(present_choices) == 3:
+        # All three choices present - check for majority
+        max_count = max(counts.values())
+        majority_choices = [c for c in counts if counts[c] == max_count]
+        
+        if len(majority_choices) == 1:
+            # There's a clear majority - they defeat what they beat
+            majority = majority_choices[0]
+            losing_choice = get_what_beats(majority)
+        else:
+            # No clear majority (tie between 2+ choices) = draw
+            return []
+    else:
+        # Two choices - standard RPS rules
+        c1, c2 = present_choices[0], present_choices[1]
+        
+        # Determine losing choice
+        # Rock beats Scissors, Scissors beats Paper, Paper beats Rock
+        if (c1 == Choice.ROCK and c2 == Choice.SCISSORS) or (c1 == Choice.SCISSORS and c2 == Choice.ROCK):
+            losing_choice = Choice.SCISSORS
+        elif (c1 == Choice.SCISSORS and c2 == Choice.PAPER) or (c1 == Choice.PAPER and c2 == Choice.SCISSORS):
+            losing_choice = Choice.PAPER
+        elif (c1 == Choice.PAPER and c2 == Choice.ROCK) or (c1 == Choice.ROCK and c2 == Choice.PAPER):
+            losing_choice = Choice.ROCK
     
     # Eliminate players with losing choice
     eliminated = []
-    for player in active_players:
-        if player.choice == losing_choice:
-            player.eliminate()
-            eliminated.append(player)
+    if losing_choice:
+        for player in active_players:
+            if player.choice == losing_choice:
+                player.eliminate()
+                eliminated.append(player)
     
     return eliminated
 
@@ -178,40 +215,51 @@ def get_winner(players: List[Player]) -> Player:
     return None
 
 
-def get_round_choices(players: List[Player]) -> Tuple[Choice, Choice]:
+def get_round_choices(players: List[Player]) -> Tuple[Optional[Choice], Optional[Choice], bool]:
     """
     Get the winning and losing choices from the round.
-    Returns (winning_choice, losing_choice) or (None, None) if draw.
-    """
-    active_players = [p for p in players if p.joined and p.alive or 
-                      any(p.id == elim.id for elim in players if hasattr(elim, '_just_eliminated'))]
+    Returns (winning_choice, losing_choice, is_majority_rule) or (None, None, False) if draw.
     
-    # Get all choices made this round (including just-eliminated players)
-    choices = set()
+    is_majority_rule is True when all three choices were present but majority won.
+    """
+    # Count choices for active players (before elimination)
+    counts = {Choice.ROCK: 0, Choice.PAPER: 0, Choice.SCISSORS: 0}
     for p in players:
         if p.joined and p.choice != Choice.NONE:
-            choices.add(p.choice)
+            # Count if player is alive OR was just eliminated this round
+            # (we call this before resolve_round, so all are still "alive")
+            counts[p.choice] += 1
     
-    # All same or all three present = draw
-    if len(choices) != 2:
-        return (None, None)
+    present_choices = [c for c in counts if counts[c] > 0]
     
-    choices_list = list(choices)
-    c1, c2 = choices_list[0], choices_list[1]
+    # All same = draw
+    if len(present_choices) == 1:
+        return (None, None, False)
+    
+    if len(present_choices) == 3:
+        # All three choices present - check for majority
+        max_count = max(counts.values())
+        majority_choices = [c for c in counts if counts[c] == max_count]
+        
+        if len(majority_choices) == 1:
+            # There's a clear majority - they defeat what they beat
+            majority = majority_choices[0]
+            losing = get_what_beats(majority)
+            return (majority, losing, True)  # True = majority rule
+        else:
+            # No clear majority = draw
+            return (None, None, False)
+    
+    # Two choices - standard RPS rules
+    c1, c2 = present_choices[0], present_choices[1]
     
     # Determine winning and losing choice
-    if (c1 == Choice.ROCK and c2 == Choice.SCISSORS):
-        return (Choice.ROCK, Choice.SCISSORS)
-    elif (c1 == Choice.SCISSORS and c2 == Choice.ROCK):
-        return (Choice.ROCK, Choice.SCISSORS)
-    elif (c1 == Choice.SCISSORS and c2 == Choice.PAPER):
-        return (Choice.SCISSORS, Choice.PAPER)
-    elif (c1 == Choice.PAPER and c2 == Choice.SCISSORS):
-        return (Choice.SCISSORS, Choice.PAPER)
-    elif (c1 == Choice.PAPER and c2 == Choice.ROCK):
-        return (Choice.PAPER, Choice.ROCK)
-    elif (c1 == Choice.ROCK and c2 == Choice.PAPER):
-        return (Choice.PAPER, Choice.ROCK)
+    if (c1 == Choice.ROCK and c2 == Choice.SCISSORS) or (c1 == Choice.SCISSORS and c2 == Choice.ROCK):
+        return (Choice.ROCK, Choice.SCISSORS, False)
+    elif (c1 == Choice.SCISSORS and c2 == Choice.PAPER) or (c1 == Choice.PAPER and c2 == Choice.SCISSORS):
+        return (Choice.SCISSORS, Choice.PAPER, False)
+    elif (c1 == Choice.PAPER and c2 == Choice.ROCK) or (c1 == Choice.ROCK and c2 == Choice.PAPER):
+        return (Choice.PAPER, Choice.ROCK, False)
     
-    return (None, None)
+    return (None, None, False)
 

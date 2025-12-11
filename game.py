@@ -72,10 +72,10 @@ class Game:
         
         elif new_scene == SceneType.RESOLUTION:
             # Get the winning/losing choices before resolving (for animation)
-            winning_choice, losing_choice = get_round_choices(self.players)
+            winning_choice, losing_choice, is_majority = get_round_choices(self.players)
             
             # Set up battle animation BEFORE resolving (need player states)
-            self.scenes[SceneType.RESOLUTION].set_battle_choices(winning_choice, losing_choice)
+            self.scenes[SceneType.RESOLUTION].set_battle_choices(winning_choice, losing_choice, is_majority)
             self.scenes[SceneType.RESOLUTION].set_battle_players(self.players)
             
             # Resolve the round and set eliminated players
