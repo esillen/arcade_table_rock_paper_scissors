@@ -8,10 +8,14 @@ import random
 from typing import List, Optional, Tuple
 
 from scenes.base import Scene
-import constants
-from constants import SceneType, COLORS, Choice, SCREEN_WIDTH, SCREEN_HEIGHT
-from graphics import draw_player_slot, draw_choice_icon
-from player import Player, get_alive_count
+from core.enums import SceneType, Choice
+from core.player import Player
+from core.rules import get_alive_count
+from config.settings import SCREEN_WIDTH, SCREEN_HEIGHT, ANIMATION_DURATION
+from config.colors import COLORS
+from graphics.fonts import font_large, font_medium, font_small
+from graphics.icons import draw_choice_icon
+from graphics.player_slot import draw_player_slot
 
 
 class ResolutionScene(Scene):
@@ -26,7 +30,7 @@ class ResolutionScene(Scene):
         self.non_choosers: List[Player] = []  # Players who didn't choose
         self.battle_pairs: List[Tuple[Player, Player]] = []  # (winner, loser) pairs
         self.animation_start = 0
-        self.animation_duration = 2.5  # seconds
+        self.animation_duration = ANIMATION_DURATION
         self.winning_choice: Optional[Choice] = None
         self.losing_choice: Optional[Choice] = None
         self.is_majority_rule: bool = False
@@ -255,8 +259,8 @@ class ResolutionScene(Scene):
             
             if self.is_no_choice:
                 # "TOO SLOW!" text for non-choosers
-                header_text = constants.FONT_LARGE.render("TOO SLOW!", True, COLORS['red'])
-                header_shadow = constants.FONT_LARGE.render("TOO SLOW!", True, (0, 0, 0))
+                header_text = font_large().render("TOO SLOW!", True, COLORS['red'])
+                header_shadow = font_large().render("TOO SLOW!", True, (0, 0, 0))
                 
                 header_rect = header_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 40))
                 shadow_rect = header_shadow.get_rect(center=(SCREEN_WIDTH // 2 + 4, SCREEN_HEIGHT // 2 - 36))
@@ -268,7 +272,7 @@ class ResolutionScene(Scene):
                 self.screen.blit(header_text, header_rect)
                 
                 # Explanation
-                explain_text = constants.FONT_MEDIUM.render("Didn't choose = Eliminated!", True, COLORS['orange'])
+                explain_text = font_medium().render("Didn't choose = Eliminated!", True, COLORS['orange'])
                 explain_rect = explain_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 20))
                 explain_text.set_alpha(text_alpha)
                 self.screen.blit(explain_text, explain_rect)
@@ -281,8 +285,8 @@ class ResolutionScene(Scene):
                 # Different text for majority rule
                 if self.is_majority_rule:
                     # "MAJORITY RULES!" header
-                    majority_text = constants.FONT_LARGE.render("MAJORITY RULES!", True, COLORS['purple'])
-                    majority_shadow = constants.FONT_LARGE.render("MAJORITY RULES!", True, (0, 0, 0))
+                    majority_text = font_large().render("MAJORITY RULES!", True, COLORS['purple'])
+                    majority_shadow = font_large().render("MAJORITY RULES!", True, (0, 0, 0))
                     
                     majority_rect = majority_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 60))
                     shadow_rect = majority_shadow.get_rect(center=(SCREEN_WIDTH // 2 + 4, SCREEN_HEIGHT // 2 - 56))
@@ -299,14 +303,14 @@ class ResolutionScene(Scene):
                     loser_count = len(self.losers)
                     
                     count_str = f"{winner_name}: {winner_count}  vs  Others: {neutral_count + loser_count}"
-                    count_text = constants.FONT_SMALL.render(count_str, True, COLORS['silver'])
+                    count_text = font_small().render(count_str, True, COLORS['silver'])
                     count_rect = count_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 10))
                     count_text.set_alpha(text_alpha)
                     self.screen.blit(count_text, count_rect)
                     
                     # Result text (smaller, below)
-                    result_text = constants.FONT_MEDIUM.render(f"{winner_name} {verb} {loser_name}!", True, COLORS['gold'])
-                    result_shadow = constants.FONT_MEDIUM.render(f"{winner_name} {verb} {loser_name}!", True, (0, 0, 0))
+                    result_text = font_medium().render(f"{winner_name} {verb} {loser_name}!", True, COLORS['gold'])
+                    result_shadow = font_medium().render(f"{winner_name} {verb} {loser_name}!", True, (0, 0, 0))
                     
                     result_rect = result_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 35))
                     result_shadow_rect = result_shadow.get_rect(center=(SCREEN_WIDTH // 2 + 3, SCREEN_HEIGHT // 2 + 38))
@@ -318,8 +322,8 @@ class ResolutionScene(Scene):
                     self.screen.blit(result_text, result_rect)
                 else:
                     # Standard text
-                    result_text = constants.FONT_MEDIUM.render(f"{winner_name} {verb} {loser_name}!", True, COLORS['gold'])
-                    shadow_text = constants.FONT_MEDIUM.render(f"{winner_name} {verb} {loser_name}!", True, (0, 0, 0))
+                    result_text = font_medium().render(f"{winner_name} {verb} {loser_name}!", True, COLORS['gold'])
+                    shadow_text = font_medium().render(f"{winner_name} {verb} {loser_name}!", True, (0, 0, 0))
                     
                     result_rect = result_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2))
                     shadow_rect = shadow_text.get_rect(center=(SCREEN_WIDTH // 2 + 3, SCREEN_HEIGHT // 2 + 3))
@@ -364,20 +368,20 @@ class ResolutionScene(Scene):
             # Draw "DRAW" text for ties (but not for no-choice situations)
             if progress > 0.3:
                 # Shadow
-                shadow = constants.FONT_LARGE.render("DRAW!", True, (0, 0, 0))
+                shadow = font_large().render("DRAW!", True, (0, 0, 0))
                 shadow_rect = shadow.get_rect(center=(SCREEN_WIDTH // 2 + 4, SCREEN_HEIGHT // 2 - 46))
                 self.screen.blit(shadow, shadow_rect)
                 
-                draw_text = constants.FONT_LARGE.render("DRAW!", True, COLORS['cyan'])
+                draw_text = font_large().render("DRAW!", True, COLORS['cyan'])
                 draw_rect = draw_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 50))
                 self.screen.blit(draw_text, draw_rect)
                 
-                no_elim = constants.FONT_MEDIUM.render("No eliminations", True, COLORS['silver'])
+                no_elim = font_medium().render("No eliminations", True, COLORS['silver'])
                 no_elim_rect = no_elim.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 20))
                 self.screen.blit(no_elim, no_elim_rect)
                 
                 # Explain why it's a draw
-                explain = constants.FONT_SMALL.render("(No majority - all choices tied)", True, COLORS['silver'])
+                explain = font_small().render("(No majority - all choices tied)", True, COLORS['silver'])
                 explain_rect = explain.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 60))
                 self.screen.blit(explain, explain_rect)
         
@@ -387,7 +391,7 @@ class ResolutionScene(Scene):
             
             if self.eliminated_this_round:
                 elim_names = ", ".join([f"P{p.id}" for p in self.eliminated_this_round])
-                elim_text = constants.FONT_SMALL.render(f"Eliminated: {elim_names}", True, COLORS['red'])
+                elim_text = font_small().render(f"Eliminated: {elim_names}", True, COLORS['red'])
                 elim_rect = elim_text.get_rect(center=(SCREEN_WIDTH // 2, y_offset))
                 self.screen.blit(elim_text, elim_rect)
             
@@ -397,6 +401,6 @@ class ResolutionScene(Scene):
                 cont_text = "Press SPACE to see the winner!"
             else:
                 cont_text = f"Press SPACE to continue ({alive} players remaining)"
-            cont = constants.FONT_SMALL.render(cont_text, True, COLORS['green'])
+            cont = font_small().render(cont_text, True, COLORS['green'])
             cont_rect = cont.get_rect(center=(SCREEN_WIDTH // 2, y_offset + 40))
             self.screen.blit(cont, cont_rect)

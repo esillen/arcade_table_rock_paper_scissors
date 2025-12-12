@@ -7,9 +7,12 @@ import math
 from typing import List, Optional
 
 from scenes.base import Scene
-import constants
-from constants import SceneType, COLORS, PLAYER_COLORS, SCREEN_WIDTH, SCREEN_HEIGHT
-from player import Player, get_winner
+from core.enums import SceneType
+from core.player import Player
+from core.rules import get_winner
+from config.settings import SCREEN_WIDTH, SCREEN_HEIGHT
+from config.colors import COLORS, PLAYER_COLORS
+from graphics.fonts import font_large, font_medium
 
 
 class VictoryScene(Scene):
@@ -51,12 +54,12 @@ class VictoryScene(Scene):
         
         if self.winner:
             # Winner announcement
-            winner_text = constants.FONT_LARGE.render(f"PLAYER {self.winner.id} WINS!", True, self.winner.color)
+            winner_text = font_large().render(f"PLAYER {self.winner.id} WINS!", True, self.winner.color)
             winner_rect = winner_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 100))
             self.screen.blit(winner_text, winner_rect)
             
             # Trophy/celebration
-            trophy_text = constants.FONT_LARGE.render("🏆", True, COLORS['gold'])
+            trophy_text = font_large().render("🏆", True, COLORS['gold'])
             trophy_rect = trophy_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 20))
             self.screen.blit(trophy_text, trophy_rect)
             
@@ -65,12 +68,11 @@ class VictoryScene(Scene):
                              (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 20), 80, 8)
         else:
             # No winner (everyone eliminated somehow)
-            draw_text = constants.FONT_LARGE.render("NOBODY WINS!", True, COLORS['red'])
+            draw_text = font_large().render("NOBODY WINS!", True, COLORS['red'])
             draw_rect = draw_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 50))
             self.screen.blit(draw_text, draw_rect)
         
         # Restart prompt
-        restart = constants.FONT_MEDIUM.render("Press SPACE for new game", True, COLORS['white'])
+        restart = font_medium().render("Press SPACE for new game", True, COLORS['white'])
         restart_rect = restart.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 150))
         self.screen.blit(restart, restart_rect)
-

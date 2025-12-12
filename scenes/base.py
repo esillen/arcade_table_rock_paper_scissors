@@ -7,9 +7,9 @@ from abc import ABC, abstractmethod
 from typing import List, Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from player import Player
+    from core.player import Player
 
-from constants import SceneType
+from core.enums import SceneType
 
 
 class Scene(ABC):
@@ -43,4 +43,3 @@ class Scene(ABC):
     def draw_background(self):
         """Draw the pre-rendered background."""
         self.screen.blit(self.bg_surface, (0, 0))
-

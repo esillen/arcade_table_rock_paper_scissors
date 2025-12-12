@@ -7,10 +7,12 @@ import math
 from typing import List, Optional
 
 from scenes.base import Scene
-import constants
-from constants import SceneType, COLORS, Choice, SCREEN_WIDTH, SCREEN_HEIGHT
-from graphics import draw_player_slot
-from player import Player
+from core.enums import SceneType, Choice
+from core.player import Player
+from config.settings import SCREEN_WIDTH, SCREEN_HEIGHT, COUNTDOWN_DURATION, SPEEDUP_THRESHOLD
+from config.colors import COLORS
+from graphics.fonts import font_large, font_medium, font_small
+from graphics.player_slot import draw_player_slot
 
 
 class GameScene(Scene):
@@ -18,7 +20,7 @@ class GameScene(Scene):
     
     def __init__(self, screen: pygame.Surface, bg_surface: pygame.Surface):
         super().__init__(screen, bg_surface)
-        self.countdown_duration = 10  # seconds
+        self.countdown_duration = COUNTDOWN_DURATION
         self.countdown_start = 0
         self.round_number = 1
         self.speedup_triggered = False
@@ -47,7 +49,7 @@ class GameScene(Scene):
         if self.speedup_triggered:
             # Calculate time since speedup, starting from min(3, time_at_speedup)
             elapsed_since_speedup = (pygame.time.get_ticks() - self.speedup_time) / 1000
-            speedup_start = min(3.0, self.time_at_speedup)
+            speedup_start = min(float(SPEEDUP_THRESHOLD), self.time_at_speedup)
             return max(0, speedup_start - elapsed_since_speedup)
         else:
             elapsed = (pygame.time.get_ticks() - self.countdown_start) / 1000
@@ -86,7 +88,7 @@ class GameScene(Scene):
         # Check if all players have chosen - trigger speedup
         if not self.speedup_triggered and self.all_players_chosen(players):
             remaining = self.get_remaining_time()
-            if remaining > 3:
+            if remaining > SPEEDUP_THRESHOLD:
                 self.trigger_speedup()
         
         if self.get_remaining_time() <= 0:
@@ -169,12 +171,12 @@ class GameScene(Scene):
             elif timer_scale > 1.2:
                 base_font = pygame.font.Font(None, 160)
             else:
-                base_font = constants.FONT_LARGE
+                base_font = font_large()
             
             countdown_text = base_font.render(str(countdown_num), True, timer_color)
             
             # Scale if needed
-            if timer_scale != 1.0 and base_font == constants.FONT_LARGE:
+            if timer_scale != 1.0 and base_font == font_large():
                 new_size = (int(countdown_text.get_width() * timer_scale),
                            int(countdown_text.get_height() * timer_scale))
                 countdown_text = pygame.transform.smoothscale(countdown_text, new_size)
@@ -191,7 +193,7 @@ class GameScene(Scene):
             
             # Draw shadow for better visibility
             shadow_text = base_font.render(str(countdown_num), True, (0, 0, 0))
-            if timer_scale != 1.0 and base_font == constants.FONT_LARGE:
+            if timer_scale != 1.0 and base_font == font_large():
                 shadow_text = pygame.transform.smoothscale(shadow_text, new_size)
             shadow_rect = shadow_text.get_rect(center=(SCREEN_WIDTH // 2 + 4 + shake_x, 
                                                        SCREEN_HEIGHT // 2 - 46 + shake_y))
@@ -213,17 +215,18 @@ class GameScene(Scene):
                 inst_text = "TIME'S ALMOST UP!"
                 inst_color = COLORS['red']
             
-            choose_text = constants.FONT_MEDIUM.render(inst_text, True, inst_color)
+            choose_text = font_medium().render(inst_text, True, inst_color)
             choose_rect = choose_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 50))
             self.screen.blit(choose_text, choose_rect)
         
         # Round indicator
-        round_text = constants.FONT_SMALL.render(f"Round {self.round_number}", True, COLORS['silver'])
+        round_text = font_small().render(f"Round {self.round_number}", True, COLORS['silver'])
         round_rect = round_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 100))
         self.screen.blit(round_text, round_rect)
         
         # Show "All players ready!" message when everyone has chosen
         if self.all_players_chosen(players) and remaining > 0:
-            ready_text = constants.FONT_SMALL.render("All players ready!", True, COLORS['green'])
+            ready_text = font_small().render("All players ready!", True, COLORS['green'])
             ready_rect = ready_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 130))
             self.screen.blit(ready_text, ready_rect)
+

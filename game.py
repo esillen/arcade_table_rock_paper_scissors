@@ -1,14 +1,16 @@
-#!/usr/bin/env python3
 """
 Rock Paper Scissors - Local Multiplayer Arena
-A game for up to 8 players standing around the screen.
+Main game class managing scenes and game state.
 """
 
 import pygame
 
-from constants import SCREEN_WIDTH, SCREEN_HEIGHT, SceneType, init_fonts
-from graphics import create_background_surface
-from player import create_players, resolve_round, get_round_choices, get_choosers, get_non_choosers
+from config.settings import SCREEN_WIDTH, SCREEN_HEIGHT
+from core.enums import SceneType
+from core.player import create_players
+from core.rules import resolve_round, get_round_choices, get_choosers, get_non_choosers
+from graphics.fonts import init_fonts
+from graphics.background import create_background_surface
 from scenes import MenuScene, GameScene, ResolutionScene, VictoryScene
 
 
@@ -128,13 +130,3 @@ class Game:
             self.clock.tick(60)
         
         pygame.quit()
-
-
-def main():
-    """Entry point for the game."""
-    game = Game()
-    game.run()
-
-
-if __name__ == "__main__":
-    main()
