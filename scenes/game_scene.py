@@ -151,9 +151,9 @@ class GameScene(Scene):
         
         remaining = self.get_remaining_time()
         
-        # Draw player slots first (behind timer)
+        # Draw player slots first (behind timer) - only alive players
         for player in players:
-            if player.joined:
+            if player.joined and player.alive:
                 draw_player_slot(self.screen, player, show_choice=False, show_controls=True)
         
         if remaining > 0:

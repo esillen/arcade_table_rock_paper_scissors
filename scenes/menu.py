@@ -74,6 +74,7 @@ class MenuScene(Scene):
         count_rect = count_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 80))
         self.screen.blit(count_text, count_rect)
         
-        # Draw player slots
+        # Draw player slots (only show players who haven't joined yet or are still alive)
         for player in players:
-            draw_player_slot(self.screen, player, show_choice=False, show_controls=False)
+            if not player.joined or player.alive:
+                draw_player_slot(self.screen, player, show_choice=False, show_controls=False)

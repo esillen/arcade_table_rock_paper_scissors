@@ -340,26 +340,34 @@ class ResolutionScene(Scene):
         
         progress = self.get_animation_progress()
         
-        # Draw all player slots with choices revealed
-        # But hide the choice icon for losers/non-choosers after impact
+        # Draw player slots - only show players who are:
+        # - Still alive (survived this round), OR
+        # - Being eliminated THIS round (in losers or non_choosers)
         for player in players:
-            if player.joined:
-                show_choice = True
-                
-                # Non-choosers never had a choice to show
-                if player in self.non_choosers:
-                    show_choice = False
-                
-                # During animation, don't show loser's choice after impact
-                if progress > 0.5 and player in self.losers:
-                    show_choice = False  # Choice has been defeated
-                
-                # For winners during travel phase, dim their slot choice 
-                # (since it's traveling)
-                if progress < 0.5 and player in self.winners:
-                    show_choice = False  # It's traveling
-                
-                draw_player_slot(self.screen, player, show_choice=show_choice, show_controls=False)
+            if not player.joined:
+                continue
+            
+            # Only show players who are alive or being eliminated this round
+            is_being_eliminated = player in self.losers or player in self.non_choosers
+            if not player.alive and not is_being_eliminated:
+                continue  # Skip players eliminated in previous rounds
+            
+            show_choice = True
+            
+            # Non-choosers never had a choice to show
+            if player in self.non_choosers:
+                show_choice = False
+            
+            # During animation, don't show loser's choice after impact
+            if progress > 0.5 and player in self.losers:
+                show_choice = False  # Choice has been defeated
+            
+            # For winners during travel phase, dim their slot choice 
+            # (since it's traveling)
+            if progress < 0.5 and player in self.winners:
+                show_choice = False  # It's traveling
+            
+            draw_player_slot(self.screen, player, show_choice=show_choice, show_controls=False)
         
         # Draw battle animation if there was a winner/loser (or non-chooser elimination)
         if self.battle_pairs:
