@@ -61,11 +61,11 @@ class ResolutionScene(Scene):
         self.neutrals = []
         self.battle_pairs = []
         
-        # Each chooser attacks a non-chooser
+        # Each chooser attacks EVERY non-chooser
         if choosers and non_choosers:
-            for i, chooser in enumerate(choosers):
-                non_chooser = non_choosers[i % len(non_choosers)]
-                self.battle_pairs.append((chooser, non_chooser))
+            for chooser in choosers:
+                for non_chooser in non_choosers:
+                    self.battle_pairs.append((chooser, non_chooser))
     
     def set_battle_players(self, players: List[Player]):
         """Determine winners, losers, and neutrals, and pair them up for animation."""
@@ -90,12 +90,11 @@ class ResolutionScene(Scene):
                     # Third choice (neutral in majority rule)
                     self.neutrals.append(p)
         
-        # Pair up winners with losers (each winner attacks a loser)
+        # Pair up winners with losers (each winner attacks ALL losers)
         if self.winners and self.losers:
-            for i, winner in enumerate(self.winners):
-                # Each winner targets a loser (cycle through if more winners than losers)
-                loser = self.losers[i % len(self.losers)]
-                self.battle_pairs.append((winner, loser))
+            for winner in self.winners:
+                for loser in self.losers:
+                    self.battle_pairs.append((winner, loser))
     
     def get_animation_progress(self) -> float:
         """Get animation progress from 0.0 to 1.0."""

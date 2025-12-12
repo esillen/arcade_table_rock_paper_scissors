@@ -209,22 +209,47 @@ def draw_player_slot(surface: pygame.Surface, player, show_choice: bool = False,
     temp_surface = pygame.Surface((slot_width, slot_height), pygame.SRCALPHA)
     cx, cy = slot_width // 2, slot_height // 2  # Center of temp surface
     
+    is_eliminated = player.joined and not player.alive
+    
     # Draw slot background with player color tint
-    bg_color = tuple(c // 6 for c in player.color) + (180,)
+    if is_eliminated:
+        # Darker, damaged-looking background for eliminated players
+        bg_color = (30, 15, 15, 200)
+    else:
+        bg_color = tuple(c // 6 for c in player.color) + (180,)
     pygame.draw.rect(temp_surface, bg_color, (0, 0, slot_width, slot_height), border_radius=15)
+    
+    # For eliminated players, add crack lines to show damage
+    if is_eliminated:
+        crack_color = (60, 30, 30)
+        # Draw crack patterns
+        pygame.draw.line(temp_surface, crack_color, (20, 30), (80, 70), 2)
+        pygame.draw.line(temp_surface, crack_color, (80, 70), (60, 120), 2)
+        pygame.draw.line(temp_surface, crack_color, (80, 70), (120, 90), 2)
+        pygame.draw.line(temp_surface, crack_color, (180, 40), (140, 80), 2)
+        pygame.draw.line(temp_surface, crack_color, (140, 80), (160, 130), 2)
+        pygame.draw.line(temp_surface, crack_color, (140, 80), (100, 110), 2)
+        pygame.draw.line(temp_surface, crack_color, (30, 140), (70, 100), 2)
+        pygame.draw.line(temp_surface, crack_color, (170, 140), (130, 110), 2)
     
     # Border color based on state
     if not player.joined:
         border_color = (80, 80, 80)
-    elif not player.alive:
+    elif is_eliminated:
         border_color = (100, 40, 40)
     else:
         border_color = player.color
     
     pygame.draw.rect(temp_surface, border_color, (0, 0, slot_width, slot_height), 4, border_radius=15)
     
-    # Player number (near top of slot)
-    num_text = constants.FONT_MEDIUM.render(f"P{player.id}", True, player.color if player.joined else (100, 100, 100))
+    # Player number (near top of slot) - dimmed for eliminated
+    if is_eliminated:
+        num_color = (100, 50, 50)
+    elif player.joined:
+        num_color = player.color
+    else:
+        num_color = (100, 100, 100)
+    num_text = constants.FONT_MEDIUM.render(f"P{player.id}", True, num_color)
     num_rect = num_text.get_rect(center=(cx, 35))
     temp_surface.blit(num_text, num_rect)
     
@@ -234,11 +259,47 @@ def draw_player_slot(surface: pygame.Surface, player, show_choice: bool = False,
         join_text = constants.FONT_SMALL.render(f"Press {ready_key_name}", True, (150, 150, 150))
         join_rect = join_text.get_rect(center=(cx, 80))
         temp_surface.blit(join_text, join_rect)
-    elif not player.alive:
-        # Show eliminated
+    elif is_eliminated:
+        # Show eliminated text
         elim_text = constants.FONT_SMALL.render("ELIMINATED", True, (200, 60, 60))
-        elim_rect = elim_text.get_rect(center=(cx, 80))
+        elim_rect = elim_text.get_rect(center=(cx, 100))
         temp_surface.blit(elim_text, elim_rect)
+        
+        # Draw big red X over the slot
+        x_color = (220, 50, 50)
+        x_thickness = 8
+        padding = 25
+        # Top-left to bottom-right
+        pygame.draw.line(temp_surface, x_color, 
+                        (padding, padding), 
+                        (slot_width - padding, slot_height - padding), 
+                        x_thickness)
+        # Top-right to bottom-left
+        pygame.draw.line(temp_surface, x_color, 
+                        (slot_width - padding, padding), 
+                        (padding, slot_height - padding), 
+                        x_thickness)
+        
+        # Draw darker outline for the X for better visibility
+        x_outline = (120, 20, 20)
+        pygame.draw.line(temp_surface, x_outline, 
+                        (padding, padding), 
+                        (slot_width - padding, slot_height - padding), 
+                        x_thickness + 4)
+        pygame.draw.line(temp_surface, x_outline, 
+                        (slot_width - padding, padding), 
+                        (padding, slot_height - padding), 
+                        x_thickness + 4)
+        # Redraw red X on top
+        pygame.draw.line(temp_surface, x_color, 
+                        (padding, padding), 
+                        (slot_width - padding, slot_height - padding), 
+                        x_thickness)
+        pygame.draw.line(temp_surface, x_color, 
+                        (slot_width - padding, padding), 
+                        (padding, slot_height - padding), 
+                        x_thickness)
+        
     elif show_choice and player.choice != Choice.NONE:
         # Show their choice icon
         draw_choice_icon(temp_surface, player.choice, cx, 100, 40, player.color, 0)
