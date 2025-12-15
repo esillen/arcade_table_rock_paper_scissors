@@ -54,7 +54,7 @@ class VictoryScene(Scene):
         
         if self.winner:
             # Winner announcement
-            winner_text = font_large().render(f"PLAYER {self.winner.id} WINS!", True, self.winner.color)
+            winner_text = font_large().render(f"SPELARE {self.winner.id} VINNER!", True, self.winner.color)
             winner_rect = winner_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 100))
             self.screen.blit(winner_text, winner_rect)
             
@@ -68,11 +68,11 @@ class VictoryScene(Scene):
                              (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 20), 80, 8)
         else:
             # No winner (everyone eliminated somehow)
-            draw_text = font_large().render("NOBODY WINS!", True, COLORS['red'])
+            draw_text = font_large().render("INGEN VINNER!", True, COLORS['red'])
             draw_rect = draw_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 50))
             self.screen.blit(draw_text, draw_rect)
         
         # Restart prompt
-        restart = font_medium().render("Press SPACE for new game", True, COLORS['white'])
+        restart = font_medium().render("Tryck MELLANSLAG för nytt spel", True, COLORS['white'])
         restart_rect = restart.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 150))
         self.screen.blit(restart, restart_rect)

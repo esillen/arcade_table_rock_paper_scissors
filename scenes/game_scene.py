@@ -206,13 +206,13 @@ class GameScene(Scene):
             
             # Instructions - also react to urgency
             if remaining > 3:
-                inst_text = "CHOOSE YOUR WEAPON!"
+                inst_text = "VÄLJ DITT VAPEN!"
                 inst_color = COLORS['white']
             elif remaining > 1:
-                inst_text = "HURRY UP!"
+                inst_text = "SKYNDA DIG!"
                 inst_color = COLORS['orange']
             else:
-                inst_text = "TIME'S ALMOST UP!"
+                inst_text = "TIDEN ÄR NÄSTAN SLUT!"
                 inst_color = COLORS['red']
             
             choose_text = font_medium().render(inst_text, True, inst_color)
@@ -220,13 +220,13 @@ class GameScene(Scene):
             self.screen.blit(choose_text, choose_rect)
         
         # Round indicator
-        round_text = font_small().render(f"Round {self.round_number}", True, COLORS['silver'])
+        round_text = font_small().render(f"Runda {self.round_number}", True, COLORS['silver'])
         round_rect = round_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 100))
         self.screen.blit(round_text, round_rect)
         
         # Show "All players ready!" message when everyone has chosen
         if self.all_players_chosen(players) and remaining > 0:
-            ready_text = font_small().render("All players ready!", True, COLORS['green'])
+            ready_text = font_small().render("Alla spelare redo!", True, COLORS['green'])
             ready_rect = ready_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 130))
             self.screen.blit(ready_text, ready_rect)
 

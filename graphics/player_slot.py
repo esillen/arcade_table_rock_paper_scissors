@@ -73,12 +73,12 @@ def draw_player_slot(surface: pygame.Surface, player, show_choice: bool = False,
     if not player.joined:
         # Show join prompt with ready key (rock/left key)
         ready_key_name = pygame.key.name(player.rock_key).upper()
-        join_text = font_small().render(f"Press {ready_key_name}", True, (150, 150, 150))
+        join_text = font_small().render(f"Tryck {ready_key_name}", True, (150, 150, 150))
         join_rect = join_text.get_rect(center=(cx, 80))
         temp_surface.blit(join_text, join_rect)
     elif is_eliminated:
         # Show eliminated text
-        elim_text = font_small().render("ELIMINATED", True, (200, 60, 60))
+        elim_text = font_small().render("ELIMINERAD", True, (200, 60, 60))
         elim_rect = elim_text.get_rect(center=(cx, 100))
         temp_surface.blit(elim_text, elim_rect)
         
@@ -129,7 +129,7 @@ def draw_player_slot(surface: pygame.Surface, player, show_choice: bool = False,
         if player.choice == Choice.NONE:
             hint_text = font_tiny().render(f"{r_key}  {p_key}  {s_key}", True, (180, 180, 180))
         else:
-            hint_text = font_tiny().render("LOCKED IN!", True, COLORS['green'])
+            hint_text = font_tiny().render("LÅST!", True, COLORS['green'])
         
         hint_rect = hint_text.get_rect(center=(cx, 75))
         temp_surface.blit(hint_text, hint_rect)

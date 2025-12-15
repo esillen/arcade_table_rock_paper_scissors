@@ -147,12 +147,22 @@ class ResolutionScene(Scene):
     def get_battle_verb(self) -> str:
         """Get the action verb for the winning choice."""
         if self.winning_choice == Choice.ROCK:
-            return "CRUSHES"
+            return "KROSSAR"
         elif self.winning_choice == Choice.SCISSORS:
-            return "CUTS"
+            return "KLIPPER"
         elif self.winning_choice == Choice.PAPER:
-            return "COVERS"
-        return "BEATS"
+            return "TÄCKER"
+        return "SLÅR"
+    
+    def get_choice_name_swedish(self, choice: Choice) -> str:
+        """Get Swedish name for a choice."""
+        if choice == Choice.ROCK:
+            return "STEN"
+        elif choice == Choice.PAPER:
+            return "PÅSE"
+        elif choice == Choice.SCISSORS:
+            return "SAX"
+        return ""
     
     def handle_event(self, event: pygame.event.Event, players: List[Player]) -> Optional[SceneType]:
         """Handle resolution input events."""
@@ -259,8 +269,8 @@ class ResolutionScene(Scene):
             
             if self.is_no_choice:
                 # "TOO SLOW!" text for non-choosers
-                header_text = font_large().render("TOO SLOW!", True, COLORS['red'])
-                header_shadow = font_large().render("TOO SLOW!", True, (0, 0, 0))
+                header_text = font_large().render("FÖR LÅNGSAM!", True, COLORS['red'])
+                header_shadow = font_large().render("FÖR LÅNGSAM!", True, (0, 0, 0))
                 
                 header_rect = header_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 40))
                 shadow_rect = header_shadow.get_rect(center=(SCREEN_WIDTH // 2 + 4, SCREEN_HEIGHT // 2 - 36))
@@ -272,21 +282,21 @@ class ResolutionScene(Scene):
                 self.screen.blit(header_text, header_rect)
                 
                 # Explanation
-                explain_text = font_medium().render("Didn't choose = Eliminated!", True, COLORS['orange'])
+                explain_text = font_medium().render("Valde inte = Eliminerad!", True, COLORS['orange'])
                 explain_rect = explain_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 20))
                 explain_text.set_alpha(text_alpha)
                 self.screen.blit(explain_text, explain_rect)
                 
             elif self.winning_choice and self.losing_choice:
                 verb = self.get_battle_verb()
-                winner_name = self.winning_choice.name
-                loser_name = self.losing_choice.name
+                winner_name = self.get_choice_name_swedish(self.winning_choice)
+                loser_name = self.get_choice_name_swedish(self.losing_choice)
                 
                 # Different text for majority rule
                 if self.is_majority_rule:
                     # "MAJORITY RULES!" header
-                    majority_text = font_large().render("MAJORITY RULES!", True, COLORS['purple'])
-                    majority_shadow = font_large().render("MAJORITY RULES!", True, (0, 0, 0))
+                    majority_text = font_large().render("MAJORITET VINNER!", True, COLORS['purple'])
+                    majority_shadow = font_large().render("MAJORITET VINNER!", True, (0, 0, 0))
                     
                     majority_rect = majority_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 60))
                     shadow_rect = majority_shadow.get_rect(center=(SCREEN_WIDTH // 2 + 4, SCREEN_HEIGHT // 2 - 56))
@@ -302,7 +312,7 @@ class ResolutionScene(Scene):
                     neutral_count = len(self.neutrals)
                     loser_count = len(self.losers)
                     
-                    count_str = f"{winner_name}: {winner_count}  vs  Others: {neutral_count + loser_count}"
+                    count_str = f"{winner_name}: {winner_count}  vs  Andra: {neutral_count + loser_count}"
                     count_text = font_small().render(count_str, True, COLORS['silver'])
                     count_rect = count_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 10))
                     count_text.set_alpha(text_alpha)
@@ -376,20 +386,20 @@ class ResolutionScene(Scene):
             # Draw "DRAW" text for ties (but not for no-choice situations)
             if progress > 0.3:
                 # Shadow
-                shadow = font_large().render("DRAW!", True, (0, 0, 0))
+                shadow = font_large().render("OAVGJORT!", True, (0, 0, 0))
                 shadow_rect = shadow.get_rect(center=(SCREEN_WIDTH // 2 + 4, SCREEN_HEIGHT // 2 - 46))
                 self.screen.blit(shadow, shadow_rect)
                 
-                draw_text = font_large().render("DRAW!", True, COLORS['cyan'])
+                draw_text = font_large().render("OAVGJORT!", True, COLORS['cyan'])
                 draw_rect = draw_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 50))
                 self.screen.blit(draw_text, draw_rect)
                 
-                no_elim = font_medium().render("No eliminations", True, COLORS['silver'])
+                no_elim = font_medium().render("Inga elimineringar", True, COLORS['silver'])
                 no_elim_rect = no_elim.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 20))
                 self.screen.blit(no_elim, no_elim_rect)
                 
                 # Explain why it's a draw
-                explain = font_small().render("(No majority - all choices tied)", True, COLORS['silver'])
+                explain = font_small().render("(Ingen majoritet - alla val lika)", True, COLORS['silver'])
                 explain_rect = explain.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 60))
                 self.screen.blit(explain, explain_rect)
         
@@ -398,17 +408,17 @@ class ResolutionScene(Scene):
             y_offset = SCREEN_HEIGHT // 2 + 80 if (self.is_majority_rule or self.is_no_choice) else SCREEN_HEIGHT // 2 + 60
             
             if self.eliminated_this_round:
-                elim_names = ", ".join([f"P{p.id}" for p in self.eliminated_this_round])
-                elim_text = font_small().render(f"Eliminated: {elim_names}", True, COLORS['red'])
+                elim_names = ", ".join([f"S{p.id}" for p in self.eliminated_this_round])
+                elim_text = font_small().render(f"Eliminerade: {elim_names}", True, COLORS['red'])
                 elim_rect = elim_text.get_rect(center=(SCREEN_WIDTH // 2, y_offset))
                 self.screen.blit(elim_text, elim_rect)
             
             # Continue prompt
             alive = get_alive_count(players)
             if alive <= 1:
-                cont_text = "Press SPACE to see the winner!"
+                cont_text = "Tryck MELLANSLAG för att se vinnaren!"
             else:
-                cont_text = f"Press SPACE to continue ({alive} players remaining)"
+                cont_text = f"Tryck MELLANSLAG för att fortsätta ({alive} spelare kvar)"
             cont = font_small().render(cont_text, True, COLORS['green'])
             cont_rect = cont.get_rect(center=(SCREEN_WIDTH // 2, y_offset + 40))
             self.screen.blit(cont, cont_rect)

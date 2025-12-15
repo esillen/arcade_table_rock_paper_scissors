@@ -48,7 +48,7 @@ class MenuScene(Scene):
         self.draw_background()
         
         # Title
-        title = font_large().render("ROCK PAPER SCISSORS", True, COLORS['gold'])
+        title = font_large().render("STEN SAX PÅSE", True, COLORS['gold'])
         title_rect = title.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 80))
         self.screen.blit(title, title_rect)
         
@@ -59,10 +59,10 @@ class MenuScene(Scene):
         # Instructions
         joined = get_joined_count(players)
         if joined < 2:
-            inst_text = f"Need {2 - joined} more player(s) to start"
+            inst_text = f"Behöver {2 - joined} spelare till för att starta"
             inst_color = COLORS['orange']
         else:
-            inst_text = "Press SPACE to start!"
+            inst_text = "Tryck MELLANSLAG för att starta!"
             inst_color = COLORS['green']
         
         inst = font_small().render(inst_text, True, inst_color)
@@ -70,7 +70,7 @@ class MenuScene(Scene):
         self.screen.blit(inst, inst_rect)
         
         # Player count
-        count_text = font_small().render(f"Players: {joined}/8", True, COLORS['white'])
+        count_text = font_small().render(f"Spelare: {joined}/8", True, COLORS['white'])
         count_rect = count_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 80))
         self.screen.blit(count_text, count_rect)
         
